@@ -138,7 +138,6 @@ namespace PROShine
                 DialogResult = true;
             }
         }
-
         private void MacUseRandom_Checked(object sender, RoutedEventArgs e)
         {
             if (MacRandomCheckBox == null || MacAddressLabel == null || MacAddressTextBox == null || MacAddressPanel == null) return;

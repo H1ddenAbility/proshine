@@ -30,10 +30,10 @@ namespace PROProtocol
         public bool CanUseCut { get; private set; }
         public bool CanUseSmashRock { get; private set; }
         public bool IsPrivateMessageOn { get; private set; }
+        public bool IsTeamInspectionEnabled { get; private set; }
 
         public int Money { get; private set; }
         public int Coins { get; private set; }
-        public bool IsMember { get; private set; }
         public List<Pokemon> Team { get; private set; }
         public List<Pokemon> CurrentPCBox { get; private set; }
         public List<InventoryItem> Items { get; private set; }
@@ -154,6 +154,7 @@ namespace PROProtocol
             get { return Map != null; }
         }
         public bool AreNpcReceived { get; private set; }
+        public bool IsTeamInspectionOn { get; set; }
 
         public GameClient(GameConnection connection, MapConnection mapConnection)
         {
@@ -178,6 +179,7 @@ namespace PROProtocol
             Players = new Dictionary<string, PlayerInfos>();
             PCGreatestUid = -1;
             IsPrivateMessageOn = true;
+            IsTeamInspectionOn = true;
         }
 
         public void Open()
@@ -494,6 +496,16 @@ namespace PROProtocol
             SendMessage("/release " + pokemonUid);
         }
 
+        private void SendTeamInspectionOn()
+        {
+            SendMessage("/in1");
+        }
+
+        private void SendTeamInspectionOff()
+        {
+            SendMessage("/in0");
+        }
+
         private void SendPrivateMessageOn()
         {
             SendMessage("/pmon");
@@ -509,10 +521,24 @@ namespace PROProtocol
             SendMessage("/pmaway");
         }
 
+        public bool TeamInspectionOn()
+        {
+            IsTeamInspectionOn = true;
+            SendTeamInspectionOn();
+            return true;
+        }
+
         public bool PrivateMessageOn()
         {
             IsPrivateMessageOn = true;
             SendPrivateMessageOn();
+            return true;
+        }
+
+        public bool TeamInspectionOff()
+        {
+            IsTeamInspectionOn = false;
+            SendTeamInspectionOff();
             return true;
         }
 
@@ -549,12 +575,7 @@ namespace PROProtocol
 
         public bool ReleasePokemonFromTeam(int pokemonUid)
         {
-            if (!IsPCOpen || IsPCBoxRefreshing
-                || pokemonUid < 1 || pokemonUid > 6 || pokemonUid > Team.Count)
-            {
-                return false;
-            }
-            _refreshingPCBox.Set(Rand.Next(1500, 2000));
+           
             SendReleasePokemon(pokemonUid);
             return true;
         }
@@ -748,7 +769,7 @@ namespace PROProtocol
         public bool HasSurfAbility()
         {
             return HasMove("Surf") &&
-                (Map.Region == "1" && HasItemName("Soul Badge") ||
+                (Map.Region == "1" && HasItemName("Rainbow Badge") ||
                 Map.Region == "2" && HasItemName("Fog Badge") ||
                 Map.Region == "3" && HasItemName("Balance Badge"));
         }
@@ -756,7 +777,7 @@ namespace PROProtocol
         public bool HasCutAbility()
         {
             return (HasMove("Cut") || HasTreeaxe()) &&
-                (Map.Region == "1" && HasItemName("Cascade Badge") ||
+                (Map.Region == "1" ||
                 Map.Region == "2" && HasItemName("Hive Badge") ||
                 Map.Region == "3" && HasItemName("Stone Badge"));
         }
@@ -1208,7 +1229,6 @@ namespace PROProtocol
             PokedexOwned = Convert.ToInt32(playerData[4]);
             PokedexSeen = Convert.ToInt32(playerData[5]);
             PokedexEvolved = Convert.ToInt32(playerData[6]);
-            IsMember = playerData[10] == "1";
         }
 
         private void OnUpdateTime(string[] data)

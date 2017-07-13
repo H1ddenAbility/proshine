@@ -32,9 +32,7 @@ namespace PROBot
         public event Action ConnectionOpened;
         public event Action ConnectionClosed;
         public event Action<OptionSlider> SliderCreated;
-        public event Action<OptionSlider> SliderRemoved;
         public event Action<TextOption> TextboxCreated;
-        public event Action<TextOption> TextboxRemoved;
 
         public PokemonEvolver PokemonEvolver { get; private set; }
         public MoveTeacher MoveTeacher { get; private set; }
@@ -61,16 +59,21 @@ namespace PROBot
             TextOptions = new Dictionary<int, TextOption>();
         }
 
-        public void RemoveText(int index)
+                public void CallInvokes()
         {
-            TextboxRemoved?.Invoke(TextOptions[index]);
-            TextOptions.Remove(index);
-        }
-
-        public void RemoveSlider(int index)
-        {
-            SliderRemoved?.Invoke(SliderOptions[index]);
-            SliderOptions.Remove(index);
+            if (Script != null)
+            {
+                for (int i = Script.Invokes.Count - 1; i >= 0; i--)
+                {
+                    if (Script.Invokes[i].Time<DateTime.UtcNow)
+                    {
+                        if (Script.Invokes[i].Called)
+                           Script.Invokes.RemoveAt(i);
+                        else
+                            Script.Invokes[i].Call();
+                    }
+                }
+            }
         }
 
         public void CreateText(int index, string content)
@@ -159,13 +162,15 @@ namespace PROBot
         {
             if (!allowAutoReconnect)
             {
-                AutoReconnector.IsEnabled = false;
+                AutoReconnector.IsEnabled = true;
             }
             Game.Close();
         }
 
         public void Update()
         {
+            CallInvokes();
+
             AutoReconnector.Update();
 
             if (_loginRequested)

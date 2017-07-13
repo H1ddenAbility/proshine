@@ -129,7 +129,6 @@ namespace PROBot.Scripting
             _lua.Globals["getPokedexSeen"] = new Func<int>(GetPokedexSeen);
             _lua.Globals["getPokedexEvolved"] = new Func<int>(GetPokedexEvolved);
             _lua.Globals["getTeamSize"] = new Func<int>(GetTeamSize);
-            _lua.Globals["isAccountMember"] = new Func<bool>(IsAccountMember);
 
             _lua.Globals["getPokemonId"] = new Func<int, int>(GetPokemonId);
             _lua.Globals["getPokemonName"] = new Func<int, string>(GetPokemonName);
@@ -154,7 +153,6 @@ namespace PROBot.Scripting
             _lua.Globals["getPokemonMoveStatus"] = new Func<int, int, bool>(GetPokemonMoveStatus);
             _lua.Globals["getPokemonNature"] = new Func<int, string>(GetPokemonNature);
             _lua.Globals["getPokemonAbility"] = new Func<int, string>(GetPokemonAbility);
-            _lua.Globals["getPokemonStat"] = new Func<int, string, int>(GetPokemonStat);
             _lua.Globals["getPokemonEffortValue"] = new Func<int, string, int>(GetPokemonEffortValue);
             _lua.Globals["getPokemonIndividualValue"] = new Func<int, string, int>(GetPokemonIndividualValue);
             _lua.Globals["getPokemonHappiness"] = new Func<int, int>(GetPokemonHappiness);
@@ -190,6 +188,7 @@ namespace PROBot.Scripting
             _lua.Globals["isMounted"] = new Func<bool>(IsMounted);
             _lua.Globals["isSurfing"] = new Func<bool>(IsSurfing);
             _lua.Globals["isPrivateMessageEnabled"] = new Func<bool>(IsPrivateMessageEnabled);
+            _lua.Globals["isTeamInspectionEnabled"] = new Func<bool>(IsTeamInspectionEnabled);
             _lua.Globals["getTime"] = new GetTimeDelegate(GetTime);
             _lua.Globals["isMorning"] = new Func<bool>(IsMorning);
             _lua.Globals["isNoon"] = new Func<bool>(IsNoon);
@@ -228,7 +227,6 @@ namespace PROBot.Scripting
             _lua.Globals["getPokemonMoveStatusFromPC"] = new Func<int, int, int, bool>(GetPokemonMoveStatusFromPC);
             _lua.Globals["getPokemonNatureFromPC"] = new Func<int, int, string>(GetPokemonNatureFromPC);
             _lua.Globals["getPokemonAbilityFromPC"] = new Func<int, int, string>(GetPokemonAbilityFromPC);
-            _lua.Globals["getPokemonStatFromPC"] = new Func<int, int, string, int>(GetPokemonStatFromPC);
             _lua.Globals["getPokemonEffortValueFromPC"] = new Func<int, int, string, int>(GetPokemonEffortValueFromPC);
             _lua.Globals["getPokemonIndividualValueFromPC"] = new Func<int, int, string, int>(GetPokemonIndividualValueFromPC);
             _lua.Globals["getPokemonHappinessFromPC"] = new Func<int, int, int>(GetPokemonHappinessFromPC);
@@ -285,6 +283,9 @@ namespace PROBot.Scripting
             _lua.Globals["releasePokemonFromPC"] = new Func<int, int, bool>(ReleasePokemonFromPC);
             _lua.Globals["enablePrivateMessage"] = new Func<bool>(EnablePrivateMessage);
             _lua.Globals["disablePrivateMessage"] = new Func<bool>(DisablePrivateMessage);
+            _lua.Globals["enableTeamInspection"] = new Func<bool>(EnableTeamInspection);
+            _lua.Globals["disableTeamInspection"] = new Func<bool>(DisableTeamInspection);
+
             _lua.Globals["enableAutoEvolve"] = new Func<bool>(EnableAutoEvolve);
             _lua.Globals["disableAutoEvolve"] = new Func<bool>(DisableAutoEvolve);
 
@@ -313,18 +314,22 @@ namespace PROBot.Scripting
             _lua.Globals["getOption"] = new Func<int, bool>(GetOption);
             _lua.Globals["setOptionName"] = new Action<int, string>(SetOptionName);
             _lua.Globals["setOptionDescription"] = new Action<int, string>(SetOptionDescription);
-            _lua.Globals["removeOption"] = new Action<int>(RemoveOption);
 
             // Custom text option functions
             _lua.Globals["setTextOption"] = new Action<int, string>(SetTextOption);
             _lua.Globals["getTextOption"] = new Func<int, string>(GetTextOption);
             _lua.Globals["setTextOptionName"] = new Action<int, string>(SetTextOptionName);
             _lua.Globals["setTextOptionDescription"] = new Action<int, string>(SetTextOptionDescription);
-            _lua.Globals["removeTextOption"] = new Action<int>(RemoveTextOption);
 
             // File editing actions
             _lua.Globals["logToFile"] = new Action<string, DynValue, bool>(LogToFile);
             _lua.Globals["readLinesFromFile"] = new Func<string, string[]>(ReadLinesFromFile);
+
+            _lua.Globals["login"] = new Action<string, string, string, int, string, int, string, string>(Login);
+            _lua.Globals["relog"] = new Action<float, string>(Relog);
+            _lua.Globals["startScript"] = new Func<bool>(StartScript);
+            _lua.Globals["invoke"] = new Action<DynValue, float, DynValue[]>(Invoke);
+            _lua.Globals["cancelInvokes"] = new Action(CancelInvokes);
 
             foreach (string content in _libsContent)
             {
@@ -614,12 +619,6 @@ namespace PROBot.Scripting
         private int GetTeamSize()
         {
             return Bot.Game.Team.Count;
-        }
-
-        // API: Returns current account's membership status.
-        private bool IsAccountMember()
-        {
-            return Bot.Game.IsMember;
         }
 
         // API: Returns the ID of the specified pokémon in the team.
@@ -1091,24 +1090,6 @@ namespace PROBot.Scripting
             }
 
             return move.CurrentPoints;
-        }
-
-        // API: Returns the value for the specified stat of the specified pokémon in the team.
-        private int GetPokemonStat(int pokemonIndex, string statType)
-        {
-            if (pokemonIndex < 1 || pokemonIndex > Bot.Game.Team.Count)
-            {
-                Fatal("error: getPokemonStat: tried to retrieve the non-existing pokémon " + pokemonIndex + ".");
-                return 0;
-            }
-
-            if (!_stats.ContainsKey(statType.ToUpperInvariant()))
-            {
-                Fatal("error: getPokemonStat: the stat '" + statType + "' does not exist.");
-                return 0;
-            }
-
-            return Bot.Game.Team[pokemonIndex - 1].Stats.GetStat(_stats[statType.ToUpperInvariant()]);
         }
 
         // API: Returns the effort value for the specified stat of the specified pokémon in the team.
@@ -1789,10 +1770,24 @@ namespace PROBot.Scripting
             return Bot.Game.IsPrivateMessageOn;
         }
 
+        private bool IsTeamInspectionEnabled()
+        {
+            return Bot.Game.IsTeamInspectionOn;
+        }
+
+        private bool EnableTeamInspection()
+        {
+            return ExecuteAction(Bot.Game.TeamInspectionOn());
+        }
         // API: Enable private messages from users.
         private bool EnablePrivateMessage()
         {
             return ExecuteAction(Bot.Game.PrivateMessageOn());
+        }
+
+        private bool DisableTeamInspection()
+        {
+            return ExecuteAction(Bot.Game.TeamInspectionOff());
         }
 
         // API: Disable private messages from users.
@@ -2251,24 +2246,7 @@ namespace PROBot.Scripting
             return Bot.Game.CurrentPCBox[boxPokemonId - 1].Ability.Name;
         }
 
-        // API: Returns the value for the specified stat of the specified pokémon in the PC.
-        private int GetPokemonStatFromPC(int boxId, int boxPokemonId, string statType)
-        {
-            if (!IsPCAccessValid("getPokemonStatFromPC", boxId, boxPokemonId))
-            {
-                return -1;
-            }
-
-            if (!_stats.ContainsKey(statType.ToUpperInvariant()))
-            {
-                Fatal("error: getPokemonStatFromPC: the stat '" + statType + "' does not exist.");
-                return 0;
-            }
-
-            return Bot.Game.CurrentPCBox[boxPokemonId - 1].Stats.GetStat(_stats[statType.ToUpperInvariant()]);
-        }
-
-        // API: Returns the effort value for the specified stat of the specified pokémon in the PC.
+        // API: Returns the effort value for the specified stat of the specified pokémon in the team.
         private int GetPokemonEffortValueFromPC(int boxId, int boxPokemonId, string statType)
         {
             if (!IsPCAccessValid("getPokemonEffortValueFromPC", boxId, boxPokemonId))
@@ -2400,16 +2378,7 @@ namespace PROBot.Scripting
                     + " (team size: " + Bot.Game.Team.Count.ToString() + ").");
                 return false;
             }
-            if (!Bot.Game.IsPCOpen)
-            {
-                Fatal("error: releasePokemonFromTeam: cannot release a pokemon while the PC is closed: #" + pokemonUid + " (" + Bot.Game.Team[pokemonUid].Name + ").");
-                return false;
-            }
-            if (Bot.Game.IsPCBoxRefreshing)
-            {
-                Fatal("error: releasePokemonFromTeam: cannot release a pokemon while the PC box is refreshing: #" + pokemonUid + " (" + Bot.Game.Team[pokemonUid].Name + ").");
-                return false;
-            }
+          
             return ExecuteAction(Bot.Game.ReleasePokemonFromTeam(pokemonUid));
         }
 
@@ -2768,13 +2737,6 @@ namespace PROBot.Scripting
             Bot.SliderOptions[index].Description = content;
         }
 
-        // API: Removes the slider option at the specified index
-        private void RemoveOption(int index)
-        {
-            if (Bot.SliderOptions.ContainsKey(index))
-                Bot.RemoveSlider(index);
-        }
-
         // API: Sets the text of the TextOption at a particular index, or creates it if it doesn't exist
         private void SetTextOption(int index, string content)
         {
@@ -2819,12 +2781,124 @@ namespace PROBot.Scripting
 
             Bot.TextOptions[index].Description = content;
         }
-
-        // API: Removes the text option at the specified index
-        private void RemoveTextOption(int index)
+        // API: Logs in using specified credentials
+        private void Login(string accountName, string password, string server, int socks = 0, string host = "", int port = 0, string socksUser = "", string socksPass = "")
         {
-            if (Bot.TextOptions.ContainsKey(index))
-                Bot.RemoveText(index);
+            server = server.ToUpperInvariant();
+
+            if (Bot.Game != null)
+            {
+                Fatal("error: login: tried to login while already logged in");
+                return;
+            }
+
+            if (server != "BLUE" && server != "RED" && server != "YELLOW")
+            {
+                Fatal("error: login: tried to connect to an invalid server: \"" + server + "\"");
+                return;
+            }
+
+            LogMessage("Connecting to the server...");
+            Account account = new Account(accountName);
+            account.Password = password;
+            account.Server = server;
+
+            if (socks == 4 || socks == 5)
+            {
+                account.Socks.Version = (SocksVersion)socks;
+                account.Socks.Host = host;
+                account.Socks.Port = port;
+                account.Socks.Username = socksUser;
+                account.Socks.Password = socksPass;
+            }
+
+            Bot.Login(account);
+        }
+
+        // API: Logs out and logs back in after the specified number of seconds, then starts the script shortly after
+        private void Relog(float seconds, string message)
+        {
+            DynValue name = DynValue.NewString(Bot.Account.Name);
+            DynValue password = DynValue.NewString(Bot.Account.Password);
+            DynValue server = DynValue.NewString(Bot.Account.Server);
+
+            if (Bot.Account.Socks.Version != SocksVersion.None)
+            {
+                DynValue socks = DynValue.NewNumber((int)Bot.Account.Socks.Version);
+                DynValue host = DynValue.NewString(Bot.Account.Socks.Host);
+                DynValue port = DynValue.NewNumber(Bot.Account.Socks.Port);
+                DynValue socksUser = DynValue.NewString(Bot.Account.Socks.Username);
+                DynValue socksPass = DynValue.NewString(Bot.Account.Socks.Password);
+                Invoke(_lua.Globals.Get("login"), seconds, name, password, server, socks, host, port, socksUser, socksPass);
+            }
+            else
+            {
+                Invoke(_lua.Globals.Get("login"), seconds, name, password, server);
+            }
+
+            Invoke(_lua.Globals.Get("startScript"), seconds + 10);
+            Logout(message);
+        }
+
+        // API: Starts the loaded script (usable in the outer scope or with invoke)
+        private bool StartScript()
+        {
+            if (Bot.Game != null && (Bot.Running == BotClient.State.Stopped || Bot.Running == BotClient.State.Paused))
+            {
+                Bot.Start();
+                return true;
+            }
+
+            return false;
+        }
+
+        // API: Calls the specified function after the specified number of seconds
+        public void Invoke(DynValue function, float seconds, params DynValue[] args)
+        {
+            if (function.Type != DataType.Function && function.Type != DataType.ClrFunction)
+            {
+                Fatal("error: invoke: tried to call an invalid function");
+                return;
+            }
+
+            if (seconds == 0)
+            {
+                _lua.Call(function, args);
+                return;
+            }
+
+            Invoker invoker = new Invoker()
+            {
+                Function = function,
+                Time = DateTime.UtcNow.AddSeconds(seconds),
+                Script = this,
+                Args = args
+            };
+
+            Invokes.Add(invoker);
+        }
+
+        // API: Cancels all queued Invokes
+        private void CancelInvokes()
+        {
+            foreach (Invoker invoker in Invokes)
+                invoker.Called = true;
+        }
+    }
+
+    public class Invoker
+    {
+        public DynValue Function;
+        public DateTime Time;
+        public LuaScript Script;
+        public DynValue[] Args;
+        public bool Called = false;
+
+        public void Call()
+        {
+            Called = true;
+            Script.Invoke(Function, 0, Args);
         }
     }
 }
+   
