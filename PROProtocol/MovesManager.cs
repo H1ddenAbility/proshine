@@ -2543,7 +2543,7 @@ namespace PROProtocol
             Moves[410].DamageType = DamageType.Physical;
             Moves[411].Name = "aqua tail";
             Moves[411].Power = 90;
-            Moves[411].Accuracy = 90;
+            Moves[411].Accuracy = 100;
             Moves[411].Type = "water";
             Moves[411].Status = false;
             Moves[411].DamageType = DamageType.Physical;
@@ -2675,7 +2675,7 @@ namespace PROProtocol
             Moves[432].DamageType = DamageType.Physical;
             Moves[433].Name = "ice fang";
             Moves[433].Power = 65;
-            Moves[433].Accuracy = 95;
+            Moves[433].Accuracy = 100;
             Moves[433].Type = "ice";
             Moves[433].Status = false;
             Moves[433].DamageType = DamageType.Physical;
