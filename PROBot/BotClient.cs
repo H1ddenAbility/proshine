@@ -4,6 +4,7 @@ using PROProtocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Media;
 
 namespace PROBot
 {
@@ -28,6 +29,7 @@ namespace PROBot
 
         public event Action<State> StateChanged;
         public event Action<string> MessageLogged;
+        public event Action<string, Brush> CMessageLogged;
         public event Action ClientChanged;
         public event Action ConnectionOpened;
         public event Action ConnectionClosed;
@@ -59,7 +61,7 @@ namespace PROBot
             TextOptions = new Dictionary<int, TextOption>();
         }
 
-                public void CallInvokes()
+        public void CallInvokes()
         {
             if (Script != null)
             {
@@ -68,7 +70,7 @@ namespace PROBot
                     if (Script.Invokes[i].Time<DateTime.UtcNow)
                     {
                         if (Script.Invokes[i].Called)
-                           Script.Invokes.RemoveAt(i);
+                            Script.Invokes.RemoveAt(i);
                         else
                             Script.Invokes[i].Call();
                     }
@@ -112,6 +114,11 @@ namespace PROBot
         public void LogMessage(string message)
         {
             MessageLogged?.Invoke(message);
+        }
+
+        public void LogMessage(string message, Brush color)
+        {
+            CMessageLogged?.Invoke(message, color);
         }
 
         public void SetClient(GameClient client)
@@ -169,6 +176,9 @@ namespace PROBot
 
         public void Update()
         {
+            if (Script != null)
+                Script.Update();
+
             CallInvokes();
 
             AutoReconnector.Update();
@@ -361,7 +371,7 @@ namespace PROBot
                 bool executed = Script.ExecuteNextAction();
                 if (!executed && Running != State.Stopped && !_actionTimeout.Update())
                 {
-                    LogMessage("No action executed: stopping the bot.");
+                    LogMessage("No action executed: stopping the bot.", Brushes.Firebrick);
                     Stop();
                 }
                 else if (executed)
@@ -374,7 +384,7 @@ namespace PROBot
 #if DEBUG
                 LogMessage("Error during the script execution: " + ex);
 #else
-                LogMessage("Error during the script execution: " + ex.Message);
+                LogMessage("Error during the script execution: " + ex.Message, Brushes.Firebrick);
 #endif
                 Stop();
             }
@@ -393,12 +403,12 @@ namespace PROBot
 #if DEBUG
                 LogMessage("Disconnected from the server: " + ex);
 #else
-                LogMessage("Disconnected from the server: " + ex.Message);
+                LogMessage("Disconnected from the server: " + ex.Message, Brushes.Firebrick);
 #endif
             }
             else
             {
-                LogMessage("Disconnected from the server.");
+                LogMessage("Disconnected from the server.", Brushes.Firebrick);
             }
             ConnectionClosed?.Invoke();
             SetClient(null);
@@ -411,12 +421,12 @@ namespace PROBot
 #if DEBUG
                 LogMessage("Could not connect to the server: " + ex);
 #else
-                LogMessage("Could not connect to the server: " + ex.Message);
+                LogMessage("Could not connect to the server: " + ex.Message, Brushes.Firebrick);
 #endif
             }
             else
             {
-                LogMessage("Could not connect to the server.");
+                LogMessage("Could not connect to the server.", Brushes.Firebrick);
             }
             ConnectionClosed?.Invoke();
             SetClient(null);
@@ -448,25 +458,25 @@ namespace PROBot
 
         private void Client_TeleportationOccuring(string map, int x, int y)
         {
+            Brush b;
             string message = "Position updated: " + map + " (" + x + ", " + y + ")";
             if (Game.Map == null || Game.IsTeleporting)
             {
                 message += " [OK]";
+                b = Brushes.RosyBrown;
             }
             else if (Game.MapName != map)
             {
                 message += " [WARNING, different map] /!\\";
+                b = Brushes.OrangeRed;
             }
             else
             {
                 int distance = GameClient.DistanceBetween(x, y, Game.PlayerX, Game.PlayerY);
-                if (distance < 8)
-                {
-                    message += " [OK, lag, distance=" + distance + "]";
-                }
-                else
+                if (distance > 8)
                 {
                     message += " [WARNING, distance=" + distance + "] /!\\";
+                    b = Brushes.OrangeRed;
                 }
             }
             LogMessage(message);

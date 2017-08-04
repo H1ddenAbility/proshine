@@ -9,6 +9,7 @@ using System.Media;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 
@@ -227,8 +228,10 @@ namespace PROShine
             {
                 AddChannelTab(channelName);
             }
-            MainWindow.AppendLineToTextBox((_channelTabs[channelName].Content as ChatPanel).ChatBox,
-                "[" + DateTime.Now.ToLongTimeString() + "] " + author + ": " + message);
+
+            (_channelTabs[channelName].Content as ChatPanel).ChatBox.AppendText(
+                "[" + DateTime.Now.ToLongTimeString() + "] " + author + ": " + message + '\r');
+
         }
 
         private void AddChannelSystemMessage(string channelName, string message)
@@ -238,8 +241,8 @@ namespace PROShine
             {
                 AddChannelTab(channelName);
             }
-            MainWindow.AppendLineToTextBox((_channelTabs[channelName].Content as ChatPanel).ChatBox,
-                "[" + DateTime.Now.ToLongTimeString() + "] SYSTEM: " + message);
+           (_channelTabs[channelName].Content as ChatPanel).ChatBox.AppendText(
+               "[" + DateTime.Now.ToLongTimeString() + "] SYSTEM: " + message + '\r');
         }
 
         private void AddChannelPrivateMessage(string conversation, string mode, string author, string message)
@@ -253,8 +256,8 @@ namespace PROShine
             {
                 AddChannelPmTab(conversation);
             }
-            MainWindow.AppendLineToTextBox((_channelPmTabs[conversation].Content as ChatPanel).ChatBox,
-                "[" + DateTime.Now.ToLongTimeString() + "] " + author + ": " + message);
+            (_channelPmTabs[conversation].Content as ChatPanel).ChatBox.AppendText(
+                "[" + DateTime.Now.ToLongTimeString() + "] " + author + ": " + message + '\r');
         }
 
         private void AddChatMessage(string mode, string author, string message)
@@ -264,8 +267,8 @@ namespace PROShine
             {
                 author = "[" + mode + "]" + author;
             }
-            MainWindow.AppendLineToTextBox((_localChatTab.Content as ChatPanel).ChatBox,
-                "[" + DateTime.Now.ToLongTimeString() + "] " + author + ": " + message);
+            (_localChatTab.Content as ChatPanel).ChatBox.AppendText( "[" + DateTime.Now.ToLongTimeString() + "] " + author + ": " + message + '\r');
+            
         }
 
         private void AddEmoteMessage(string mode, string author, int emoteId)
@@ -274,8 +277,8 @@ namespace PROShine
             {
                 author = "[" + mode + "]" + author;
             }
-            MainWindow.AppendLineToTextBox((_localChatTab.Content as ChatPanel).ChatBox,
-                "[" + DateTime.Now.ToLongTimeString() + "] " + author + " is " + ChatEmotes.GetDescription(emoteId));
+           (_localChatTab.Content as ChatPanel).ChatBox.AppendText( "[" + DateTime.Now.ToLongTimeString() + "] " + author + " is " + ChatEmotes.GetDescription(emoteId) + '\r');
+            
         }
 
         private void AddPrivateMessage(string conversation, string mode, string author, string message)
@@ -289,8 +292,7 @@ namespace PROShine
             {
                 AddPmTab(conversation);
             }
-            MainWindow.AppendLineToTextBox((_pmTabs[conversation].Content as ChatPanel).ChatBox,
-                "[" + DateTime.Now.ToLongTimeString() + "] " + author + ": " + message);
+            (_pmTabs[conversation].Content as ChatPanel).ChatBox.AppendText( "[" + DateTime.Now.ToLongTimeString() + "] " + author + ": " + message + '\r');
         }
 
         private void AddPrivateSystemMessage(string conversation, string mode, string author, string message)
@@ -304,8 +306,7 @@ namespace PROShine
             {
                 AddPmTab(conversation);
             }
-            MainWindow.AppendLineToTextBox((_pmTabs[conversation].Content as ChatPanel).ChatBox,
-                "[" + DateTime.Now.ToLongTimeString() + "] " + author + " " + message);
+            (_pmTabs[conversation].Content as ChatPanel).ChatBox.AppendText( "[" + DateTime.Now.ToLongTimeString() + "] " + author + " " + message + '\r');
         }
 
         private void InputChatBox_KeyDown(object sender, KeyEventArgs e)

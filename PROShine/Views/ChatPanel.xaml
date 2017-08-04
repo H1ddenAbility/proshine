@@ -7,11 +7,9 @@
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
-        <TextBox Name="ChatBox"
+        <RichTextBox Name="ChatBox"
                  IsReadOnly="True"
-                 TextWrapping="Wrap"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 Background="#FFDFE4EE">
-        </TextBox>
+                 Background="#FFDFE4EE"/>
     </Grid>
 </UserControl>

@@ -36,5 +36,13 @@ namespace PROProtocol
             MaxPoints = maxPoints;
             CurrentPoints = currentPoints;
         }
+
+        public PokemonMove(int position, int id)
+        {
+            Position = position;
+            Id = id;
+            MaxPoints = 0;
+            CurrentPoints = 0;
+        }
     }
 }

@@ -99,5 +99,10 @@ namespace PROShine
                 e.Effects = DragDropEffects.None;
             }
         }
+
+        private void PokemonsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
     }
 }

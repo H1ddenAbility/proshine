@@ -65,6 +65,11 @@ namespace PROBot.Scripting
             CallFunctionSafe("onResume");
         }
 
+        public override void Update()
+        {
+            CallFunctionSafe("onUpdate");
+        }
+
         public override void OnDialogMessage(string message)
         {
             CallFunctionSafe("onDialogMessage", message);
@@ -153,7 +158,6 @@ namespace PROBot.Scripting
             _lua.Globals["getPokemonMoveStatus"] = new Func<int, int, bool>(GetPokemonMoveStatus);
             _lua.Globals["getPokemonNature"] = new Func<int, string>(GetPokemonNature);
             _lua.Globals["getPokemonAbility"] = new Func<int, string>(GetPokemonAbility);
-            _lua.Globals["getPokemonStat"] = new Func<int, string, int>(GetPokemonStat);
             _lua.Globals["getPokemonEffortValue"] = new Func<int, string, int>(GetPokemonEffortValue);
             _lua.Globals["getPokemonIndividualValue"] = new Func<int, string, int>(GetPokemonIndividualValue);
             _lua.Globals["getPokemonHappiness"] = new Func<int, int>(GetPokemonHappiness);
@@ -174,6 +178,7 @@ namespace PROBot.Scripting
             _lua.Globals["getMapLinks"] = new Func<List<Dictionary<string, DynValue>>>(GetMapLinks);
             _lua.Globals["getMapSize"] = new Func<Dictionary<string, int>>(GetMapSize);
             _lua.Globals["getCellType"] = new Func<int, int, string>(GetCellType);
+            _lua.Globals["getSpawnList"] = new Func<List<Dictionary<string, object>>>(GetSpawnList);
 
             _lua.Globals["hasItem"] = new Func<string, bool>(HasItem);
             _lua.Globals["getItemQuantity"] = new Func<string, int>(GetItemQuantity);
@@ -192,13 +197,15 @@ namespace PROBot.Scripting
             _lua.Globals["isMounted"] = new Func<bool>(IsMounted);
             _lua.Globals["isSurfing"] = new Func<bool>(IsSurfing);
             _lua.Globals["isPrivateMessageEnabled"] = new Func<bool>(IsPrivateMessageEnabled);
-            _lua.Globals["isTeamInspectionEnabled"] = new Func<bool>(IsTeamInspectionEnabled);
             _lua.Globals["getTime"] = new GetTimeDelegate(GetTime);
             _lua.Globals["isMorning"] = new Func<bool>(IsMorning);
             _lua.Globals["isNoon"] = new Func<bool>(IsNoon);
             _lua.Globals["isNight"] = new Func<bool>(IsNight);
             _lua.Globals["isOutside"] = new Func<bool>(IsOutside);
             _lua.Globals["isAutoEvolve"] = new Func<bool>(IsAutoEvolve);
+            _lua.Globals["isTeamInspectionEnabled"] = new Func<bool>(IsTeamInspectionEnabled);
+
+
 
             _lua.Globals["isCurrentPCBoxRefreshed"] = new Func<bool>(IsCurrentPCBoxRefreshed);
             _lua.Globals["getCurrentPCBoxId"] = new Func<int>(GetCurrentPCBoxId);
@@ -231,7 +238,6 @@ namespace PROBot.Scripting
             _lua.Globals["getPokemonMoveStatusFromPC"] = new Func<int, int, int, bool>(GetPokemonMoveStatusFromPC);
             _lua.Globals["getPokemonNatureFromPC"] = new Func<int, int, string>(GetPokemonNatureFromPC);
             _lua.Globals["getPokemonAbilityFromPC"] = new Func<int, int, string>(GetPokemonAbilityFromPC);
-            _lua.Globals["getPokemonStatFromPC"] = new Func<int, int, string, int>(GetPokemonStatFromPC);
             _lua.Globals["getPokemonEffortValueFromPC"] = new Func<int, int, string, int>(GetPokemonEffortValueFromPC);
             _lua.Globals["getPokemonIndividualValueFromPC"] = new Func<int, int, string, int>(GetPokemonIndividualValueFromPC);
             _lua.Globals["getPokemonHappinessFromPC"] = new Func<int, int, int>(GetPokemonHappinessFromPC);
@@ -244,7 +250,7 @@ namespace PROBot.Scripting
 
             // Battle conditions
             _lua.Globals["isOpponentShiny"] = new Func<bool>(IsOpponentShiny);
-            _lua.Globals["isAlreadyCaught"] = new Func<bool>(IsAlreadyCaught);
+            _lua.Globals["isAlreadyCaught"] = new Func<bool>(IsAlreadyCaught); // Now available outside of battle too.
             _lua.Globals["isWildBattle"] = new Func<bool>(IsWildBattle);
             _lua.Globals["getActivePokemonNumber"] = new Func<int>(GetActivePokemonNumber);
             _lua.Globals["getOpponentId"] = new Func<int>(GetOpponentId);
@@ -288,11 +294,10 @@ namespace PROBot.Scripting
             _lua.Globals["releasePokemonFromPC"] = new Func<int, int, bool>(ReleasePokemonFromPC);
             _lua.Globals["enablePrivateMessage"] = new Func<bool>(EnablePrivateMessage);
             _lua.Globals["disablePrivateMessage"] = new Func<bool>(DisablePrivateMessage);
-            _lua.Globals["enableTeamInspection"] = new Func<bool>(EnableTeamInspection);
-            _lua.Globals["disableTeamInspection"] = new Func<bool>(DisableTeamInspection);
-
             _lua.Globals["enableAutoEvolve"] = new Func<bool>(EnableAutoEvolve);
             _lua.Globals["disableAutoEvolve"] = new Func<bool>(DisableAutoEvolve);
+            _lua.Globals["disableTeamInspection"] = new Func<bool>(DisableTeamInspection);
+            _lua.Globals["enableTeamInspection"] = new Func<bool>(EnableTeamInspection);
 
             // Path functions
             _lua.Globals["pushDialogAnswer"] = new Action<DynValue>(PushDialogAnswer);
@@ -335,6 +340,9 @@ namespace PROBot.Scripting
             _lua.Globals["startScript"] = new Func<bool>(StartScript);
             _lua.Globals["invoke"] = new Action<DynValue, float, DynValue[]>(Invoke);
             _lua.Globals["cancelInvokes"] = new Action(CancelInvokes);
+
+            // Pokedex functions
+            _lua.Globals["hasPokedexEntry"] = new Func<string,bool>(HasPokedexEntry);
 
             foreach (string content in _libsContent)
             {
@@ -455,8 +463,8 @@ namespace PROBot.Scripting
             Bot.Logout(false);
         }
 
-        // API: Returns an array of all NPCs that can be challenged on the current map. format : {index = {"x" = x, "y" = y}}
-         private List<Dictionary<string, DynValue>> GetActiveBattlers()
+        // API return an array of all NPCs that can be challenged on the current map. format : {"npcName" = {"x" = x, "y" = y}}
+        private List<Dictionary<string, DynValue>> GetActiveBattlers()
         {
             var activeBattlers = new List<Dictionary<string, DynValue>>();
             foreach (Npc npc in Bot.Game.Map.Npcs.Where(npc => npc.CanBattle))
@@ -482,6 +490,33 @@ namespace PROBot.Scripting
                 digSpots.Add(npcData);
             }
             return digSpots;
+        }
+
+        // API return an array of all known pokémons with their properties on the current map.
+        /* format : {index = {  "name" = string name,
+         *                      "caught" = boolean caught,
+         *                      "member" = boolean member,
+         *                      "surf" = boolean surf,
+         *                      "fish" = boolean fish,
+         *                      "hitem = boolean hitem}}
+         */
+
+        // TODO : Allow users to search on spawnlists.
+        private List<Dictionary<string, object>> GetSpawnList()
+        {
+            var spawnList = new List<Dictionary<string, object>>();
+            foreach (PokemonSpawn pkmspwn in Bot.Game.SpawnList)
+            {
+                var spawnData = new Dictionary<string, object>();
+                spawnData["name"] = pkmspwn.name;
+                spawnData["caught"] = pkmspwn.captured;
+                spawnData["surf"] = pkmspwn.surf;
+                spawnData["member"] = pkmspwn.msonly;
+                spawnData["fish"] = pkmspwn.fish;
+                spawnData["hitem"] = pkmspwn.hitem;
+                spawnList.Add(spawnData);
+            }
+            return spawnList;
         }
 
         // API return an array of all usable Headbutt trees on the currrent map. format : {index = {"x" = x, "y" = y}}
@@ -527,8 +562,8 @@ namespace PROBot.Scripting
             return items;
         }
 
-        // API: Returns npc data on current map, format : { { "x" = x , "y" = y, "type" = type }, {...}, ... }
-         private List<Dictionary<string, DynValue>> GetNpcData()
+        // API return npc data on current map, format : { { "x" = x , "y" = y, "type" = type }, {...}, ... }
+        private List<Dictionary<string, DynValue>> GetNpcData()
         {
             var lNpc = new List<Dictionary<string, DynValue>>();
             foreach (Npc npc in Bot.Game.Map.Npcs)
@@ -547,50 +582,51 @@ namespace PROBot.Scripting
         }
 
         // API: Returns an array of all map links on the current map
-         public List<Dictionary<string, DynValue>> GetMapLinks()
-         {
-             var links = new List<Dictionary<string, DynValue>>();
- 
-             foreach (var link in Bot.Game.Map.LinkDestinations)
-             {
+        public List<Dictionary<string, DynValue>> GetMapLinks()
+        {
+            var links = new List<Dictionary<string, DynValue>>();
+
+            foreach (var link in Bot.Game.Map.LinkDestinations)
+            {
                 foreach (var coord in link.Value)
-                 {
+                {
                     var newLink = new Dictionary<string, DynValue>();
                     newLink["x"] = DynValue.NewNumber(coord.Item1);
                     newLink["y"] = DynValue.NewNumber(coord.Item2);
                     newLink["name"] = DynValue.NewString(link.Key);
                     links.Add(newLink);
-                 }
-              }
- 
-             return links;
+                }
+            }
+
+            return links;
         }
- 
+        
         // API: Returns the dimensions of the current map.
-         private Dictionary<string, int> GetMapSize()
-         {
-             var mapSize = new Dictionary<string, int>();
-             mapSize["x"] = Bot.Game.Map.Width;
-             mapSize["y"] = Bot.Game.Map.Height;
-             return mapSize;
-         }
- 
-         // API: Returns the cell type of the specified cell on the current map.
-         private string GetCellType(int x, int y)
-         {
-             Map map = Bot.Game.Map;
- 
-             if (map.IsGrass(x, y)) return "Grass";
-             if (map.IsWater(x, y)) return "Water";
-             if (map.IsNormalGround(x, y)) return "Normal Ground";
-             if (map.IsIce(x, y)) return "Ice";
-             if (map.IsPC(x, y)) return "PC";
-             if (map.HasLink(x, y)) return "Link";
- 
-             return "Collider";
-         }
-// API: Returns true if the string contains the specified part, ignoring the case.
-private bool StringContains(string haystack, string needle)
+        private Dictionary<string, int> GetMapSize()
+        {
+            var mapSize = new Dictionary<string, int>();
+            mapSize["x"] = Bot.Game.Map.Width;
+            mapSize["y"] = Bot.Game.Map.Height;
+            return mapSize;
+        }
+
+        // API: Returns the cell type of the specified cell on the current map.
+        private string GetCellType(int x, int y)
+        {
+            Map map = Bot.Game.Map;
+
+            if (map.IsGrass(x, y)) return "Grass";
+            if (map.IsWater(x, y)) return "Water";
+            if (map.IsNormalGround(x, y)) return "Normal Ground";
+            if (map.IsIce(x, y)) return "Ice";
+            if (map.IsPC(x, y)) return "PC";
+            if (map.HasLink(x, y)) return "Link";
+
+            return "Collider";
+        }
+
+        // API: Returns true if the string contains the specified part, ignoring the case.
+        private bool StringContains(string haystack, string needle)
         {
             return haystack.ToUpperInvariant().Contains(needle.ToUpperInvariant());
         }
@@ -1141,24 +1177,6 @@ private bool StringContains(string haystack, string needle)
             return move.CurrentPoints;
         }
 
-        // API: Returns the value for the specified stat of the specified pokémon in the team.
-         private int GetPokemonStat(int pokemonIndex, string statType)
-         {
-             if (pokemonIndex< 1 || pokemonIndex> Bot.Game.Team.Count)
-             {
-                 Fatal("error: getPokemonStat: tried to retrieve the non-existing pokémon " + pokemonIndex + ".");
-                 return 0;
-             }
- 
-             if (!_stats.ContainsKey(statType.ToUpperInvariant()))
-             {
-                 Fatal("error: getPokemonStat: the stat '" + statType + "' does not exist.");
-                 return 0;
-             }
- 
-             return Bot.Game.Team[pokemonIndex - 1].Stats.GetStat(_stats[statType.ToUpperInvariant()]);
-         }
- 
         // API: Returns the effort value for the specified stat of the specified pokémon in the team.
         private int GetPokemonEffortValue(int pokemonIndex, string statType)
         {
@@ -1317,10 +1335,20 @@ private bool StringContains(string haystack, string needle)
         {
             if (!Bot.Game.IsInBattle)
             {
-                Fatal("error: isAlreadyCaught is only usable in battle.");
+                Fatal("error: You cannot use isAlreadyCaught outside of battle. use hasPokedexEntry(string pokeName) instead.");
                 return false;
             }
             return Bot.Game.ActiveBattle.AlreadyCaught;
+        }
+
+        // API : Returns true if the given pokémon has already been caugth and has a pokédex entry.
+        private bool HasPokedexEntry(string pokeName)
+        {
+            if (!Bot.Game.IsInBattle)
+            {
+                return IsAlreadyCaught();
+            }
+            return Bot.Game.IsAlreadyCaught(pokeName);
         }
 
         // API: Returns true if the current battle is against a wild pokémon.
@@ -1837,24 +1865,10 @@ private bool StringContains(string haystack, string needle)
             return Bot.Game.IsPrivateMessageOn;
         }
 
-        private bool IsTeamInspectionEnabled()
-        {
-            return Bot.Game.IsTeamInspectionOn;
-        }
-
-        private bool EnableTeamInspection()
-        {
-            return ExecuteAction(Bot.Game.TeamInspectionOn());
-        }
         // API: Enable private messages from users.
         private bool EnablePrivateMessage()
         {
             return ExecuteAction(Bot.Game.PrivateMessageOn());
-        }
-
-        private bool DisableTeamInspection()
-        {
-            return ExecuteAction(Bot.Game.TeamInspectionOff());
         }
 
         // API: Disable private messages from users.
@@ -2313,23 +2327,6 @@ private bool StringContains(string haystack, string needle)
             return Bot.Game.CurrentPCBox[boxPokemonId - 1].Ability.Name;
         }
 
-        // API: Returns the value for the specified stat of the specified pokémon in the PC.
-         private int GetPokemonStatFromPC(int boxId, int boxPokemonId, string statType)
-         {
-             if (!IsPCAccessValid("getPokemonStatFromPC", boxId, boxPokemonId))
-             {
-                 return -1;
-             }
- 
-             if (!_stats.ContainsKey(statType.ToUpperInvariant()))
-             {
-                 Fatal("error: getPokemonStatFromPC: the stat '" + statType + "' does not exist.");
-                 return 0;
-             }
- 
-             return Bot.Game.CurrentPCBox[boxPokemonId - 1].Stats.GetStat(_stats[statType.ToUpperInvariant()]);
-         }
- 
         // API: Returns the effort value for the specified stat of the specified pokémon in the team.
         private int GetPokemonEffortValueFromPC(int boxId, int boxPokemonId, string statType)
         {
@@ -2462,7 +2459,16 @@ private bool StringContains(string haystack, string needle)
                     + " (team size: " + Bot.Game.Team.Count.ToString() + ").");
                 return false;
             }
-          
+            if (!Bot.Game.IsPCOpen)
+            {
+                Fatal("error: releasePokemonFromTeam: cannot release a pokemon while the PC is closed: #" + pokemonUid + " (" + Bot.Game.Team[pokemonUid].Name + ").");
+                return false;
+            }
+            if (Bot.Game.IsPCBoxRefreshing)
+            {
+                Fatal("error: releasePokemonFromTeam: cannot release a pokemon while the PC box is refreshing: #" + pokemonUid + " (" + Bot.Game.Team[pokemonUid].Name + ").");
+                return false;
+            }
             return ExecuteAction(Bot.Game.ReleasePokemonFromTeam(pokemonUid));
         }
 
@@ -2865,6 +2871,25 @@ private bool StringContains(string haystack, string needle)
 
             Bot.TextOptions[index].Description = content;
         }
+
+        // API: Return the state of the team inspection
+        private bool IsTeamInspectionEnabled()
+        {
+            return Bot.Game.IsTeamInspectionEnabled;
+        }
+
+        // API: Disable team inspection
+        private bool DisableTeamInspection()
+        {
+            return Bot.Game.DisableTeamInspection();
+        }
+
+        // API: Enable team inspection
+        private bool EnableTeamInspection()
+        {
+            return Bot.Game.EnableTeamInspection();
+        }
+
         // API: Logs in using specified credentials
         private void Login(string accountName, string password, string server, int socks = 0, string host = "", int port = 0, string socksUser = "", string socksPass = "")
         {
@@ -2889,7 +2914,7 @@ private bool StringContains(string haystack, string needle)
 
             if (socks == 4 || socks == 5)
             {
-                account.Socks.Version = (SocksVersion)socks;
+                account.Socks.Version = (SocksVersion) socks;
                 account.Socks.Host = host;
                 account.Socks.Port = port;
                 account.Socks.Username = socksUser;
@@ -2923,7 +2948,7 @@ private bool StringContains(string haystack, string needle)
             Invoke(_lua.Globals.Get("startScript"), seconds + 10);
             Logout(message);
         }
-
+        
         // API: Starts the loaded script (usable in the outer scope or with invoke)
         private bool StartScript()
         {
@@ -2935,7 +2960,7 @@ private bool StringContains(string haystack, string needle)
 
             return false;
         }
-
+        
         // API: Calls the specified function after the specified number of seconds
         public void Invoke(DynValue function, float seconds, params DynValue[] args)
         {
@@ -2961,7 +2986,7 @@ private bool StringContains(string haystack, string needle)
 
             Invokes.Add(invoker);
         }
-
+        
         // API: Cancels all queued Invokes
         private void CancelInvokes()
         {
@@ -2985,4 +3010,3 @@ private bool StringContains(string haystack, string needle)
         }
     }
 }
-   

@@ -34,6 +34,7 @@ namespace PROProtocol
         public string Region { get; private set; }
         public List<Npc> Npcs { get; private set; }
         public List<Npc> OriginalNpcs { get; private set; }
+        public List<Pokemon> CatchablePokemons { get; private set; }
         public Dictionary<string, List<Tuple<int, int>>> LinkDestinations { get; private set; }
 
         private Dictionary<int, int> SliderValues = new Dictionary<int, int>
@@ -320,7 +321,8 @@ namespace PROProtocol
             {
                 int num = Tiles2[x, y];
                 int num2 = Tiles3[x, y];
-                return (num == 6 || num == 14 || num == 55 || num == 15 || num == 248 || num == 249 || num == 250 || num2 == 6 || num2 == 14 || num2 == 55 || num2 == 15 || num2 == 248 || num2 == 249 || num2 == 250);
+                bool hasLink = HasLink(x, y);
+                return (num == 6 || num == 14 || num == 55 || num == 15 || num == 248 || num == 249 || num == 250 || num2 == 6 || num2 == 14 || num2 == 55 || num2 == 15 || num2 == 248 || num2 == 249 || num2 == 250) && !hasLink;
             }
             return false;
         }
@@ -330,7 +332,8 @@ namespace PROProtocol
             if (x >= 0 && x < Width && y >= 0 && y < Height)
             {
                 int collider = Colliders[x, y];
-                return (collider == 5 || collider == 12);
+                bool hasLink = HasLink(x, y);
+                return (collider == 5 || collider == 12) && !hasLink;
             }
             return false;
         }

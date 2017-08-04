@@ -30,10 +30,10 @@ namespace PROShine
 
         public string MacAddress
         {
-            get { return !MacRandomCheckBox.IsChecked.Value ? MacAddressTextBox.Text.Trim() : null; }
+            get { return !MacRandomCheckBox.IsChecked.Value? MacAddressTextBox.Text.Trim() : null; }
         }
 
-        public bool HasProxy
+public bool HasProxy
         {
             get { return ProxyCheckBox.IsChecked.Value; }
         }
@@ -138,6 +138,7 @@ namespace PROShine
                 DialogResult = true;
             }
         }
+
         private void MacUseRandom_Checked(object sender, RoutedEventArgs e)
         {
             if (MacRandomCheckBox == null || MacAddressLabel == null || MacAddressTextBox == null || MacAddressPanel == null) return;
