@@ -106,7 +106,7 @@ namespace PROProtocol
         public List<TradePokemon> First_Trade;
         public List<TradePokemon> Second_Trade;
 
-        private const string Version = "0.974";
+        private const string Version = "Piplup";
 
         private GameConnection _connection;
         private DateTime _lastMovement;
@@ -766,7 +766,7 @@ namespace PROProtocol
         public bool HasSurfAbility()
         {
             return HasMove("Surf") &&
-                (Map.Region == "1" && HasItemName("Rainbow Badge") ||
+                (Map.Region == "1" && HasItemName("HM03 - Surf") ||
                 Map.Region == "2" && HasItemName("Fog Badge") ||
                 Map.Region == "3" && HasItemName("Balance Badge"));
         }
