@@ -6,7 +6,7 @@
         xmlns:fa="http://schemas.fontawesome.io/icons/"
         xmlns:local="clr-namespace:PROShine"
         mc:Ignorable="d"
-        Title="MainWindow" Height="513" Width="800" Background="#FFCDD5E2" Foreground="#FF101020" Icon="../logo.ico" FontSize="13.333">
+        Title="MainWindow" Height="600" Width="800" Background="#FFCDD5E2" Foreground="#FF101020" Icon="../logo.ico" FontSize="13.333">
     <Window.Resources>
         <LinearGradientBrush x:Key="CheckedBlue" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#FFb5c3da" Offset="0" />
@@ -46,8 +46,8 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Name="On" Grid.Column="0" FontFamily="BigNoodleTitling" HorizontalAlignment="Center" VerticalAlignment="Center" Text="ON" FontSize="16" />
-                                        <TextBlock Name="Off" Grid.Column="1" FontFamily="BigNoodleTitling" HorizontalAlignment="Center" VerticalAlignment="Center" Text="OFF" FontSize="16" />
+                                        <TextBlock Name="On" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Text="ON" />
+                                        <TextBlock Name="Off" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="OFF" />
                                     </Grid>
                                 </Border>
                                 <Border BorderBrush="#FF939393" HorizontalAlignment="Left" x:Name="slider" Width="30" Height="25" BorderThickness="1" CornerRadius="3" RenderTransformOrigin="0.5,0.5" Margin="0">
@@ -90,11 +90,10 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="1.5*" />
+            <RowDefinition Height="2*" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Background="#FFB5C3DA" HorizontalAlignment="Stretch">
-            
             <Menu IsMainMenu="True" Background="#FFB5C3DA" Foreground="#FF101020" FontSize="13.333">
                 <MenuItem Header="Connection">
                     <MenuItem Name="LoginMenuItem" Header="Login" Click="LoginMenuItem_Click" />
@@ -115,9 +114,6 @@
                 </MenuItem>
             </Menu>
             <DockPanel Background="#FFB5C3DA" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,2">
-                <Button Click="Collapse_Click" Background="#FFB5C3DA" BorderThickness="0">
-                    <fa:FontAwesome Icon="ChevronCircleUp" Name="CollapseIcon" />
-                </Button>
                 <TextBlock Name="StatusIcon" Foreground="#FF101020" FontSize="15" Margin="8,2,2,2" VerticalAlignment="Center">
                     <fa:FontAwesome Icon="LightbulbOutline" VerticalAlignment="Center" />
                 </TextBlock>
@@ -129,11 +125,7 @@
                 <TextBlock Name="MapNameIcon" Foreground="#FF101020" FontSize="15" Margin="8,2,2,2" VerticalAlignment="Center">
                     <fa:FontAwesome Icon="MapOutline" VerticalAlignment="Center"/>
                 </TextBlock>
-                <TextBlock Name="MapNameText" Text="Not Loaded" Margin="2,2,2,2" VerticalAlignment="Center">
-                    <TextBlock.ToolTip>
-                        <StackPanel Name="SpawnList"/>
-                    </TextBlock.ToolTip>
-                </TextBlock>
+                <TextBlock Name="MapNameText" Text="Not Loaded" Margin="2,2,2,2" VerticalAlignment="Center"/>
                 <TextBlock Name="PlayerPositionIcon" Foreground="#FF101020" FontSize="15" Margin="8,2,2,2" VerticalAlignment="Center">
                     <fa:FontAwesome Icon="Compass" VerticalAlignment="Center" />
                 </TextBlock>
@@ -170,9 +162,9 @@
                     <TextBlock>Always evolve a pokemon.</TextBlock>
                 </CheckBox.ToolTip>
             </CheckBox>
-            <CheckBox x:Name="AvoidStaffSwitch" Style="{StaticResource SwitchStyle}" Margin="2,1,2,1" Content="Staff counter: " Checked="AvoidStaffSwitch_Checked" Unchecked="AvoidStaffSwitch_Unchecked">
+            <CheckBox x:Name="AvoidStaffSwitch" Style="{StaticResource SwitchStyle}" Margin="2,1,2,1" Content="Staff evader: " Checked="AvoidStaffSwitch_Checked" Unchecked="AvoidStaffSwitch_Unchecked">
                 <CheckBox.ToolTip>
-                    <TextBlock>[Someone's (Taos) Exclusive] Counters GMs. You don't need to know more. :v</TextBlock>
+                    <TextBlock>Disconnect when a staff member appears on the map. Disable the Auto-reconnect (only works if the admin is not invisible).</TextBlock>
                 </CheckBox.ToolTip>
             </CheckBox>
             <CheckBox x:Name="AutoReconnectSwitch" Style="{StaticResource SwitchStyle}" Margin="2,1,2,1" Content="Auto-reconnect: " Checked="AutoReconnectSwitch_Checked" Unchecked="AutoReconnectSwitch_Unchecked">
@@ -237,54 +229,45 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <ToggleButton Name="TeamButton" Grid.Row="0" Margin="1" Background="#FFCDD5E2" Foreground="#FF101020">
-                        <ToggleButton.Content >
-                            <DockPanel>
+                        <ToggleButton.Content>
+                            <StackPanel>
                                 <fa:FontAwesome Icon="Paw" Foreground="#FF101020" FontSize="15" Margin="4,1,4,1" />
                                 <TextBlock Text="Team" Margin="4,1,4,1" />
-                            </DockPanel>
+                            </StackPanel>
                         </ToggleButton.Content>
                     </ToggleButton>
                     <ToggleButton Name="InventoryButton" Grid.Row="1" Margin="1" Background="#FFCDD5E2" Foreground="#FF101020">
                         <ToggleButton.Content>
-                            <DockPanel>
+                            <StackPanel>
                                 <fa:FontAwesome Icon="Suitcase" Foreground="#FF101020" FontSize="15" Margin="4,1,4,1" />
                                 <TextBlock Text="Inventory" Margin="4,1,4,1" />
-                            </DockPanel>
+                            </StackPanel>
                         </ToggleButton.Content>
                     </ToggleButton>
                     <ToggleButton Name="ChatButton" Grid.Row="2" Margin="1" Background="#FFCDD5E2" Foreground="#FF101020">
                         <ToggleButton.Content>
-                            <DockPanel>
+                            <StackPanel>
                                 <fa:FontAwesome Icon="Comment" Foreground="#FF101020" FontSize="15" Margin="4,1,4,1" />
                                 <TextBlock Text="Chat" Margin="4,1,4,1" />
-                            </DockPanel>
+                            </StackPanel>
                         </ToggleButton.Content>
                     </ToggleButton>
                     <ToggleButton Name="PlayersButton" Grid.Row="3" Margin="1" Background="#FFCDD5E2" Foreground="#FF101020">
                         <ToggleButton.Content>
-                            <DockPanel>
+                            <StackPanel>
                                 <fa:FontAwesome Icon="Users" Foreground="#FF101020" FontSize="15" Margin="4,1,4,1" />
                                 <TextBlock Text="Players" Margin="4,1,4,1" />
-                            </DockPanel>
+                            </StackPanel>
                         </ToggleButton.Content>
                     </ToggleButton>
                     <ToggleButton Name="MapButton" Grid.Row="4" Margin="1" Background="#FFCDD5E2" Foreground="#FF101020">
                         <ToggleButton.Content>
-                            <DockPanel>
-                                <fa:FontAwesome Icon="MapMarker"  Foreground="#FF101020" FontSize="15" Margin="4,1,4,1" />
+                            <StackPanel>
+                                <fa:FontAwesome Icon="Cube"  Foreground="#FF101020" FontSize="15" Margin="4,1,4,1" />
                                 <TextBlock Text="Map" Margin="4,1,4,1" />
-                            </DockPanel>
-                        </ToggleButton.Content>
-                    </ToggleButton>
-                    <ToggleButton Name="TradeButton" Grid.Row="5" Margin="1" Background="#FFCDD5E2" Foreground="#FF101020">
-                        <ToggleButton.Content>
-                            <DockPanel>
-                                <fa:FontAwesome Icon="Exchange"  Foreground="#FF101020" FontSize="15" Margin="4,1,4,1" />
-                                <TextBlock Text="Trade" Margin="4,1,4,1" />
-                            </DockPanel>
+                            </StackPanel>
                         </ToggleButton.Content>
                     </ToggleButton>
                 </Grid>
@@ -295,18 +278,18 @@
                 <ContentControl Name="ChatContent" />
                 <ContentControl Name="PlayersContent" />
                 <ContentControl Name="MapContent" />
-                <ContentControl Name="TradeContent" />
             </Grid>
         </Grid>
         <GridSplitter ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="4" Grid.Row="3" Background="Transparent"/>
         <Grid Grid.Row="3" Margin="4">
-            <RichTextBox Name="MessageTextBox"
+            <TextBox Name="MessageTextBox"
                      Background="#FFCDD5E2"
                      IsReadOnly="True"
                      IsReadOnlyCaretVisible="True"
                      AcceptsReturn="True"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-
+                     TextWrapping="Wrap"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+            </TextBox>
         </Grid>
     </Grid>
 </Window>

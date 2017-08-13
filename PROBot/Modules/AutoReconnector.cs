@@ -5,8 +5,8 @@ namespace PROBot.Modules
 {
     public class AutoReconnector
     {
-        public const int MinDelay = 20;
-        public const int MaxDelay = 30;
+        public const int MinDelay = 30;
+        public const int MaxDelay = 50;
 
         public event Action<bool> StateChanged;
 
@@ -74,7 +74,7 @@ namespace PROBot.Modules
             if (_reconnecting)
             {
                 _bot.Start();
-                _reconnecting = true;
+                _reconnecting = false;
             }
         }
 

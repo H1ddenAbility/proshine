@@ -4,7 +4,6 @@ using PROProtocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Media;
 
 namespace PROBot
 {
@@ -29,12 +28,13 @@ namespace PROBot
 
         public event Action<State> StateChanged;
         public event Action<string> MessageLogged;
-        public event Action<string, Brush> CMessageLogged;
         public event Action ClientChanged;
         public event Action ConnectionOpened;
         public event Action ConnectionClosed;
         public event Action<OptionSlider> SliderCreated;
+        public event Action<OptionSlider> SliderRemoved;
         public event Action<TextOption> TextboxCreated;
+        public event Action<TextOption> TextboxRemoved;
 
         public PokemonEvolver PokemonEvolver { get; private set; }
         public MoveTeacher MoveTeacher { get; private set; }
@@ -61,6 +61,13 @@ namespace PROBot
             TextOptions = new Dictionary<int, TextOption>();
         }
 
+        public void CancelInvokes()
+        {
+            if (Script != null)
+                foreach (Invoker invoker in Script.Invokes)
+                    invoker.Called = true;
+        }
+        
         public void CallInvokes()
         {
             if (Script != null)
@@ -76,6 +83,18 @@ namespace PROBot
                     }
                 }
             }
+        }
+
+        public void RemoveText(int index)
+        {
+            TextboxRemoved?.Invoke(TextOptions[index]);
+            TextOptions.Remove(index);
+        }
+
+        public void RemoveSlider(int index)
+        {
+            SliderRemoved?.Invoke(SliderOptions[index]);
+            SliderOptions.Remove(index);
         }
 
         public void CreateText(int index, string content)
@@ -114,11 +133,6 @@ namespace PROBot
         public void LogMessage(string message)
         {
             MessageLogged?.Invoke(message);
-        }
-
-        public void LogMessage(string message, Brush color)
-        {
-            CMessageLogged?.Invoke(message, color);
         }
 
         public void SetClient(GameClient client)
@@ -169,16 +183,13 @@ namespace PROBot
         {
             if (!allowAutoReconnect)
             {
-                AutoReconnector.IsEnabled = true;
+                AutoReconnector.IsEnabled = false;
             }
             Game.Close();
         }
 
         public void Update()
         {
-            if (Script != null)
-                Script.Update();
-
             CallInvokes();
 
             AutoReconnector.Update();
@@ -236,6 +247,9 @@ namespace PROBot
 
         public void Stop()
         {
+            if (Game != null)
+                Game.ClearPath();
+
             if (Running != State.Stopped)
             {
                 Running = State.Stopped;
@@ -323,7 +337,6 @@ namespace PROBot
             if (canInteract)
             {
                 Game.TalkToNpc(target.Id);
-                target.CanBattle = false;
                 return true;
             }
             else
@@ -371,7 +384,7 @@ namespace PROBot
                 bool executed = Script.ExecuteNextAction();
                 if (!executed && Running != State.Stopped && !_actionTimeout.Update())
                 {
-                    LogMessage("No action executed: stopping the bot.", Brushes.Firebrick);
+                    LogMessage("No action executed: stopping the bot.");
                     Stop();
                 }
                 else if (executed)
@@ -384,7 +397,7 @@ namespace PROBot
 #if DEBUG
                 LogMessage("Error during the script execution: " + ex);
 #else
-                LogMessage("Error during the script execution: " + ex.Message, Brushes.Firebrick);
+                LogMessage("Error during the script execution: " + ex.Message);
 #endif
                 Stop();
             }
@@ -403,12 +416,12 @@ namespace PROBot
 #if DEBUG
                 LogMessage("Disconnected from the server: " + ex);
 #else
-                LogMessage("Disconnected from the server: " + ex.Message, Brushes.Firebrick);
+                LogMessage("Disconnected from the server: " + ex.Message);
 #endif
             }
             else
             {
-                LogMessage("Disconnected from the server.", Brushes.Firebrick);
+                LogMessage("Disconnected from the server.");
             }
             ConnectionClosed?.Invoke();
             SetClient(null);
@@ -421,12 +434,12 @@ namespace PROBot
 #if DEBUG
                 LogMessage("Could not connect to the server: " + ex);
 #else
-                LogMessage("Could not connect to the server: " + ex.Message, Brushes.Firebrick);
+                LogMessage("Could not connect to the server: " + ex.Message);
 #endif
             }
             else
             {
-                LogMessage("Could not connect to the server.", Brushes.Firebrick);
+                LogMessage("Could not connect to the server.");
             }
             ConnectionClosed?.Invoke();
             SetClient(null);
@@ -458,25 +471,25 @@ namespace PROBot
 
         private void Client_TeleportationOccuring(string map, int x, int y)
         {
-            Brush b;
             string message = "Position updated: " + map + " (" + x + ", " + y + ")";
             if (Game.Map == null || Game.IsTeleporting)
             {
                 message += " [OK]";
-                b = Brushes.RosyBrown;
             }
             else if (Game.MapName != map)
             {
                 message += " [WARNING, different map] /!\\";
-                b = Brushes.OrangeRed;
             }
             else
             {
                 int distance = GameClient.DistanceBetween(x, y, Game.PlayerX, Game.PlayerY);
-                if (distance > 8)
+                if (distance < 8)
+                {
+                    message += " [OK, lag, distance=" + distance + "]";
+                }
+                else
                 {
                     message += " [WARNING, distance=" + distance + "] /!\\";
-                    b = Brushes.OrangeRed;
                 }
             }
             LogMessage(message);

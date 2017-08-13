@@ -21,8 +21,6 @@ namespace PROProtocol
         public int PokedexOwned { get; private set; }
         public int PokedexSeen { get; private set; }
         public int PokedexEvolved { get; private set; }
-        public List<PokemonSpawn> SpawnList { get; private set; }
-        public List<PokedexPokemon> PokedexList { get; private set; }
 
         public bool IsInBattle { get; private set; }
         public bool IsSurfing { get; private set; }
@@ -36,6 +34,7 @@ namespace PROProtocol
 
         public int Money { get; private set; }
         public int Coins { get; private set; }
+        public bool IsMember { get; private set; }
         public List<Pokemon> Team { get; private set; }
         public List<Pokemon> CurrentPCBox { get; private set; }
         public List<InventoryItem> Items { get; private set; }
@@ -94,17 +93,6 @@ namespace PROProtocol
         public event Action<string, string> PokeTimeUpdated;
         public event Action<Shop> ShopOpened;
         public event Action<List<Pokemon>> PCBoxUpdated;
-        public event Action<List<PokemonSpawn>> SpawnListUpdated;
-
-        public event Action<string> TradeRequested;
-        public event Action TradeCanceled;
-        public event Action TradeAccepted;
-        public event Action<string[]> TradeMoneyUpdated;
-        public event Action TradePokemonUpdated;
-        public event Action<string[]> TradeStatusUpdated;
-        public event Action TradeStatusReset;
-        public List<TradePokemon> First_Trade;
-        public List<TradePokemon> Second_Trade;
 
         private const string Version = "Piplup";
 
@@ -127,6 +115,12 @@ namespace PROProtocol
         private Timeout _refreshingPCBox = new Timeout();
 
         private MapClient _mapClient;
+
+        public void ClearPath()
+        {
+            _movements.Clear();
+        }
+
 
         public bool IsInactive
         {
@@ -189,13 +183,9 @@ namespace PROProtocol
             Channels = new List<ChatChannel>();
             Conversations = new List<string>();
             Players = new Dictionary<string, PlayerInfos>();
-            PokedexList = new List<PokedexPokemon>();
-            SpawnList = new List<PokemonSpawn>();
             PCGreatestUid = -1;
             IsPrivateMessageOn = true;
             IsTeamInspectionEnabled = true;
-            First_Trade = new List<TradePokemon>();
-            Second_Trade = new List<TradePokemon>();
         }
 
         public void Open()
@@ -774,7 +764,7 @@ namespace PROProtocol
         public bool HasCutAbility()
         {
             return (HasMove("Cut") || HasTreeaxe()) &&
-                (Map.Region == "1" ||
+                (Map.Region == "1" && HasItemName("HM01 - Cut") ||
                 Map.Region == "2" && HasItemName("Hive Badge") ||
                 Map.Region == "3" && HasItemName("Stone Badge"));
         }
@@ -1025,11 +1015,7 @@ namespace PROProtocol
         private void ProcessPacket(string packet)
         {
 #if DEBUG
-            if (packet.Substring(0, 1) != "U")
-            {
-                Console.WriteLine(packet);
-            }
-            //Console.WriteLine(packet);
+            Console.WriteLine(packet);
 #endif
 
             if (packet.Substring(0, 1) == "U")
@@ -1127,32 +1113,6 @@ namespace PROProtocol
                 case "m":
                     OnPCBox(data);
                     break;
-                case "k":
-                    LoadPokemons(data);
-                    break;
-                case "p":
-                    HandlePokedexMSG(data);
-                    break;
-                case "mb":
-                    // Actions : Trades requests, Friends requests..
-                    HandleActions(data);
-                    break;
-                case "t":
-                    // Trade Start
-                    HandleTrade(data);
-                    break;
-                case "tu":
-                    OnTradeUpdate(data);
-                    break;
-                case "ta":
-                    UselessTradeFeature(); // Send a "change to final screen" order to client. Useless.
-                    break;
-                case "tb":
-                    OnTradeStatusChange(data);
-                    break;
-                case "tc":
-                    OnTradeStatusReset();
-                    break;
                 default:
 #if DEBUG
                     Console.WriteLine(" ^ unhandled /!\\");
@@ -1176,7 +1136,7 @@ namespace PROProtocol
                 ScriptStatus = 1234;
                 _dialogTimeout.Set(Rand.Next(4000, 8000));
             }
-            AskForPokedex();
+
             Console.WriteLine("[Login] Authenticated successfully");
             LoggedIn?.Invoke();
         }
@@ -1256,6 +1216,7 @@ namespace PROProtocol
             PokedexOwned = Convert.ToInt32(playerData[4]);
             PokedexSeen = Convert.ToInt32(playerData[5]);
             PokedexEvolved = Convert.ToInt32(playerData[6]);
+            IsMember = playerData[10] == "1";
         }
 
         private void OnUpdateTime(string[] data)
@@ -1923,61 +1884,6 @@ namespace PROProtocol
             Players.Clear();
         }
 
-        private void LoadPokemons(string[] data)
-        {
-            SpawnList.Clear();
-            string[] sdata = data[1].Split(',');
-            for (int i = 1; i < sdata.Length - 1; i++)
-            {
-                bool fish = false;
-                bool surf = false;
-                bool hitem = false;
-                bool msonly = false;
-                bool captured = false;
-
-                if (sdata[i].Contains("f"))
-                {
-                    fish = true;
-                    sdata[i] = sdata[i].Replace("f", string.Empty);
-                }
-
-                if (sdata[i].Contains("i"))
-                {
-                    hitem = true;
-                    sdata[i] = sdata[i].Replace("i", string.Empty);
-                }
-
-                if (sdata[i].Contains("s"))
-                {
-                    surf = true;
-                    sdata[i] = sdata[i].Replace("s", string.Empty);
-                }
-
-                if (sdata[i].Contains("m"))
-                {
-                    msonly = true;
-                    sdata[i] = sdata[i].Replace("m", string.Empty);
-                }
-
-                if (sdata[i].Contains("c"))
-                {
-                    captured = true;
-                    sdata[i] = sdata[i].Replace("c", string.Empty);
-                }
-
-                // Shit for ms color lol
-                if (sdata[i].Contains("x"))
-                {
-                    sdata[i] = sdata[i].Replace("x", string.Empty);
-                }
-                PokemonSpawn pokeaadd = new PokemonSpawn(Convert.ToInt32(sdata[i]), captured, surf, fish, hitem, msonly);
-               
-                SpawnList.Add(pokeaadd);
-            }
-            SpawnListUpdated?.Invoke(SpawnList);
-
-        }
-
         public bool DisableTeamInspection()
         {
             IsTeamInspectionEnabled = false;
@@ -1990,152 +1896,6 @@ namespace PROProtocol
             IsTeamInspectionEnabled = true;
             SendMessage("/in1");
             return true;
-        }
-        
-        private void AskForPokedex()
-        {
-            SendPacket("p|.|l|0");
-        }
-
-        private void HandlePokedexMSG(string[] data)
-        {
-            string[] tdata = data[1].Split('|');
-            string type = tdata[0];
-
-            if (type == "l")
-            {
-                string[] pdata = tdata[2].Split('<'); // Format now : PokemonID>StatusID
-                for (int i = 0; i < pdata.Length; i++)
-                {
-                    if (pdata[i].Length > 0)
-                    {
-                        string[] pokedata = pdata[i].Split('>');
-                        PokedexPokemon poke = new PokedexPokemon(Convert.ToInt32(pokedata[1]),Convert.ToInt32(pokedata[0]));
-                        //Console.WriteLine(poke.ToString() + pokedata[0] + pokedata[1]);
-                        PokedexList.Add(poke);
-                    }
-                }
-            }
-            else if (type == "a")
-            {
-                string[] ddata = tdata[2].Split('|');
-                // Pokedex Informations, not done bcoz i'm lazy.
-                /* If you wanna do it :
-                 * [0] : ID 
-                 * [1] : Animal type
-                 * [2] : Unknown (not important), maybe gender percentage
-                 * [3] : Height
-                 * [4] : Weight
-                 * [5] : Description
-                 * [6] : Type
-                 * [7] : Base stats, format : HP|ATK|DEF|SPD|SP. DEF|SP. ATK
-                 * [8] : Abilities , Format : Same as list above, LVL>Name
-                 * [9] : Places where the pokémon can be caught, Format IDName<IDName
-                     Some ids : 
-                       41 : Land, Day, Morning.
-                       01 : Land, Day, Morning, Night.
-                       14: Land, Day, MS.
-                       04 : Land, Day, Morning, Night, MS.
-                */
-            }
-        }
-
-        public bool IsAlreadyCaught(string pokeName)
-        {
-            bool caught = false;
-            if (PokedexList != null) {
-                PokedexList.ForEach(delegate (PokedexPokemon pkmn)
-                { 
-                    if (pkmn.ToString() == pokeName && pkmn.isCaught())
-                    {
-                        caught = true;
-                    }
-                });
-                return caught;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        private void HandleActions(string[] data)
-        {
-            string action = (data[1].Split('|'))[3];
-            if (action.Contains("/trade")) {
-                OnTradeRequest(data);
-            }
-            else
-            {
-                // Known : Friend request.
-                // Others : ??? Maybe guilde invites, etc.
-            }
-        }
-
-        private void OnTradeRequest(string[] data )
-        {
-            string applicant = (data[1].Split('|'))[3].Replace("/trade ", ""); // Basically getting exchange applicant.
-            TradeRequested?.Invoke(applicant);
-        }
-
-        private void HandleTrade(string[] data)
-        {
-            string[] tdata = data[1].Split('|');
-            string type = tdata[0];
-            if (type == "c")
-            {
-                TradeCanceled?.Invoke();
-            } 
-            else
-            {
-                TradeMoneyUpdated?.Invoke(tdata);
-                Console.WriteLine(tdata[0] + '|' + tdata[1] + '|' // First exhcnager
-                 + tdata[2] + '|' // Second
-                 + tdata[3] + '|' // First money on exhcnage
-                 + tdata[4] + '|'); // Second money on exchange0
-            }
-        }
-
-        private void OnTradeUpdate(string[] data)
-        {
-            string[] teamData = data[1].Split('|');
-            int UID = 0;
-            First_Trade.Clear();
-            Second_Trade.Clear();
-            List <TradePokemon>  tradeList = new List<TradePokemon>();
-            foreach (string pokemon in teamData)
-            {
-                UID++;
-                if (pokemon == string.Empty)
-                    continue;
-
-                string[] pokemonData = pokemon.Split(',');
-                if (UID <= 6)
-                {
-                    First_Trade.Add(new TradePokemon(pokemonData));
-                }
-                else
-                {
-                    Second_Trade.Add(new TradePokemon(pokemonData));
-                }
-            }
-            TradePokemonUpdated?.Invoke();
-        }
-
-        private void OnTradeStatusChange(string[] data)
-        {
-            TradeStatusUpdated?.Invoke(data);
-        }
-
-        // Send a "change to final screen" order to client. Useless.
-        private void UselessTradeFeature()
-        {
-            TradeAccepted?.Invoke();
-        }
-
-        private void OnTradeStatusReset()
-        {
-            TradeStatusReset?.Invoke();
         }
     }
 }

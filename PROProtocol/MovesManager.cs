@@ -2542,8 +2542,8 @@ namespace PROProtocol
             Moves[410].Status = false;
             Moves[410].DamageType = DamageType.Physical;
             Moves[411].Name = "aqua tail";
-            Moves[411].Power = 90;
-            Moves[411].Accuracy = 100;
+            Moves[411].Power = 100;
+            Moves[411].Accuracy = 90;
             Moves[411].Type = "water";
             Moves[411].Status = false;
             Moves[411].DamageType = DamageType.Physical;
@@ -3832,6 +3832,7 @@ namespace PROProtocol
             MoveNames[533] = "Sticky Web";
             MoveNames[534] = "Horn Leech";
             MoveNames[535] = "Scald";
+            MoveNames[536] = "Dazzling Gleam";
         }
     }
 }

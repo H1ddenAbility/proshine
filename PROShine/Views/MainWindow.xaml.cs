@@ -17,8 +17,6 @@ using System.Windows.Media;
 using System.Windows.Input;
 using System.Collections.ObjectModel;
 using PROBot.Modules;
-using FontAwesome.WPF;
-using System.Windows.Documents;
 
 namespace PROShine
 {
@@ -31,7 +29,6 @@ namespace PROShine
         public ChatView Chat { get; private set; }
         public PlayersView Players { get; private set; }
         public MapView Map { get; private set; }
-        public TradeView Trade { get; private set; }
 
         private struct TabView
         {
@@ -69,10 +66,11 @@ namespace PROShine
             Bot.PokemonEvolver.StateChanged += Bot_PokemonEvolverStateChanged;
             Bot.ConnectionOpened += Bot_ConnectionOpened;
             Bot.ConnectionClosed += Bot_ConnectionClosed;
-            Bot.MessageLogged += Bot_LogMessage; // Uncolored
-            Bot.CMessageLogged += Bot_LogMessage; // Colored messages
+            Bot.MessageLogged += Bot_LogMessage;
             Bot.SliderCreated += Bot_SliderCreated;
+            Bot.SliderRemoved += Bot_SliderRemoved;
             Bot.TextboxCreated += Bot_TextboxCreated;
+            Bot.TextboxRemoved += Bot_TextboxRemoved;
             
             InitializeComponent();
             AutoReconnectSwitch.IsChecked = Bot.AutoReconnector.IsEnabled;
@@ -86,7 +84,6 @@ namespace PROShine
             Chat = new ChatView(Bot);
             Players = new PlayersView(Bot);
             Map = new MapView(Bot);
-            Trade = new TradeView(Bot);
 
             FileLog = new FileLogger();
 
@@ -98,7 +95,6 @@ namespace PROShine
             AddView(Chat, ChatContent, ChatButton);
             AddView(Players, PlayersContent, PlayersButton);
             AddView(Map, MapContent, MapButton);
-            AddView(Trade, TradeContent, TradeButton);
 
             SetTitle(null);
 
@@ -110,17 +106,51 @@ namespace PROShine
             TextOptions.ItemsSource = _textOptions = new ObservableCollection<TextOption>();
         }
 
+        public void Bot_SliderRemoved(OptionSlider option)
+        {
+            Dispatcher.InvokeAsync(delegate
+            {
+                if (_sliderOptions.Count == 1 && _textOptions.Count == 0)
+                {
+                    OptionsButton.Content = "Show Options";
+                    OptionsButton.Visibility = Visibility.Collapsed;
+                    OptionSliders.Visibility = Visibility.Collapsed;
+                    TextOptions.Visibility = Visibility.Collapsed;
+                }
+
+                _sliderOptions.Remove(option);
+                OptionSliders.Items.Refresh();
+            });
+        }
+
+        public void Bot_TextboxRemoved(TextOption option)
+        {
+            Dispatcher.InvokeAsync(delegate
+            {
+                if (_textOptions.Count == 1 && _sliderOptions.Count == 0)
+                {
+                    OptionsButton.Content = "Show Options";
+                    OptionsButton.Visibility = Visibility.Collapsed;
+                    OptionSliders.Visibility = Visibility.Collapsed;
+                    TextOptions.Visibility = Visibility.Collapsed;
+                }
+
+                _textOptions.Remove(option);
+                TextOptions.Items.Refresh();
+            });
+        }
+
         private void Options_Click(object sender, RoutedEventArgs e)
         {
             if (OptionSliders.Visibility == Visibility.Collapsed)
             {
-                
+                OptionsButton.Content = "Hide Options";
                 OptionSliders.Visibility = Visibility.Visible;
                 TextOptions.Visibility = Visibility.Visible;
             }
             else
             {
-                
+                OptionsButton.Content = "Show Options";
                 OptionSliders.Visibility = Visibility.Collapsed;
                 TextOptions.Visibility = Visibility.Collapsed;
             }
@@ -259,9 +289,9 @@ namespace PROShine
                 return;
             }
 
-            LogMessage("Connecting to the server...", Brushes.MediumSeaGreen);
+            LogMessage("Connecting to the server...");
             LoginButton.IsEnabled = false;
-            //LoginMenuItem.IsEnabled = false;
+            LoginMenuItem.IsEnabled = false;
             Account account = new Account(login.Username);
             lock (Bot)
             {
@@ -287,7 +317,7 @@ namespace PROShine
 
         private void Logout()
         {
-            LogMessage("Logging out...", Brushes.Maroon);
+            LogMessage("Logging out...");
             lock (Bot)
             {
                 Bot.Logout(false);
@@ -326,8 +356,8 @@ namespace PROShine
                         TextOptions.Visibility = Visibility.Collapsed;
                         
                         Bot.LoadScript(openDialog.FileName);
-                       // MenuPathScript.Header = "Script: \"" + Bot.Script.Name + "\"" + Environment.NewLine + openDialog.FileName;
-                        LogMessage("Script \"{0}\" by \"{1}\" successfully loaded", Bot.Script.Name, Bot.Script.Author, Brushes.YellowGreen);
+                        MenuPathScript.Header = "Script: \"" + Bot.Script.Name + "\"" + Environment.NewLine + openDialog.FileName;
+                        LogMessage("Script \"{0}\" by \"{1}\" successfully loaded", Bot.Script.Name, Bot.Script.Author);
                         if (!string.IsNullOrEmpty(Bot.Script.Description))
                         {
                             LogMessage(Bot.Script.Description);
@@ -409,11 +439,11 @@ namespace PROShine
                     {
                         SetTitle(Bot.Account.Name + " - " + Bot.Game.Server);
                         UpdateBotMenu();
-                        //LogoutMenuItem.IsEnabled = true;
+                        LogoutMenuItem.IsEnabled = true;
                         LoginMenuItem.IsEnabled = false;
                         LoginButton.IsEnabled = true;
                         LoginButtonIcon.Icon = FontAwesome.WPF.FontAwesomeIcon.SignOut;
-                        LogMessage("Connected, authenticating...", Brushes.MediumSeaGreen);
+                        LogMessage("Connected, authenticating...");
                     }
                 }
             });
@@ -424,8 +454,8 @@ namespace PROShine
             Dispatcher.InvokeAsync(delegate
             {
                 _lastQueueBreakPoint = null;
-                //LoginMenuItem.IsEnabled = true;
-                //LogoutMenuItem.IsEnabled = false;
+                LoginMenuItem.IsEnabled = true;
+                LogoutMenuItem.IsEnabled = false;
                 LoginButton.IsEnabled = true;
                 LoginButtonIcon.Icon = FontAwesome.WPF.FontAwesomeIcon.SignIn;
                 UpdateBotMenu();
@@ -439,7 +469,7 @@ namespace PROShine
             Dispatcher.InvokeAsync(delegate
             {
                 _lastQueueBreakPoint = null;
-                LogMessage("Authenticated successfully!", Brushes.MediumSeaGreen);
+                LogMessage("Authenticated successfully!");
                 UpdateBotMenu();
                 StatusText.Text = "Online";
                 StatusText.Foreground = Brushes.DarkGreen;
@@ -479,7 +509,7 @@ namespace PROShine
                         message = "Already logged in on another server";
                         break;
                 }
-                LogMessage("Authentication failed: " + message, Brushes.Firebrick);
+                LogMessage("Authentication failed: " + message);
             });
         }
 
@@ -513,14 +543,6 @@ namespace PROShine
             Dispatcher.InvokeAsync(delegate
             {
                 LogMessage(message);
-            });
-        }
-
-        private void Bot_LogMessage(string message, Brush color)
-        {
-            Dispatcher.InvokeAsync(delegate
-            {
-                LogMessage(message, color);
             });
         }
 
@@ -567,16 +589,6 @@ namespace PROShine
                     Bot.Game.BattleMessage += Client_BattleMessage;
                     Bot.Game.BattleEnded += Client_BattleEnded;
                     Bot.Game.DialogOpened += Client_DialogOpened;
-                    Bot.Game.SystemMessage += Client_SystemMessage;
-                    Bot.Game.PlayerAdded += Client_PlayerAdded;
-                    Bot.Game.PlayerUpdated += Client_PlayerUpdated;
-                    Bot.Game.PlayerRemoved += Client_PlayerRemoved;
-                    Bot.Game.InvalidPacket += Client_InvalidPacket;
-                    Bot.Game.PokeTimeUpdated += Client_PokeTimeUpdated;
-                    Bot.Game.ShopOpened += Client_ShopOpened;
-                    Bot.Game.SpawnListUpdated += Client_RefreshSpawnList;
-
-
                     Bot.Game.ChatMessage += Chat.Client_ChatMessage;
                     Bot.Game.ChannelMessage += Chat.Client_ChannelMessage;
                     Bot.Game.EmoteMessage += Chat.Client_EmoteMessage;
@@ -585,22 +597,19 @@ namespace PROShine
                     Bot.Game.PrivateMessage += Chat.Client_PrivateMessage;
                     Bot.Game.LeavePrivateMessage += Chat.Client_LeavePrivateMessage;
                     Bot.Game.RefreshChannelList += Chat.Client_RefreshChannelList;
-
-                    Bot.Game.TradeRequested += Trade.TradeRequest;
-                    Bot.Game.TradeCanceled += Trade.Reset;
-                    Bot.Game.TradeMoneyUpdated += Trade.UpdateMoney;
-                    Bot.Game.TradePokemonUpdated += Trade_PokemonsUpdated;
-                    Bot.Game.TradeStatusUpdated += Trade.StatusChanged;
-                    Bot.Game.TradeStatusReset += Trade.StatusReset;
-                    Bot.Game.TradeAccepted += Trade.ChangeToFinalView;
-
+                    Bot.Game.SystemMessage += Client_SystemMessage;
+                    Bot.Game.PlayerAdded += Client_PlayerAdded;
+                    Bot.Game.PlayerUpdated += Client_PlayerUpdated;
+                    Bot.Game.PlayerRemoved += Client_PlayerRemoved;
+                    Bot.Game.InvalidPacket += Client_InvalidPacket;
+                    Bot.Game.PokeTimeUpdated += Client_PokeTimeUpdated;
+                    Bot.Game.ShopOpened += Client_ShopOpened;
                     Bot.Game.MapLoaded += Map.Client_MapLoaded;
                     Bot.Game.PositionUpdated += Map.Client_PositionUpdated;
                     Bot.Game.PlayerAdded += Map.Client_PlayerEnteredMap;
                     Bot.Game.PlayerRemoved += Map.Client_PlayerLeftMap;
                     Bot.Game.PlayerUpdated += Map.Client_PlayerMoved;
                     Bot.Game.NpcReceived += Map.Client_NpcReceived;
-
                 }
             }
             Dispatcher.InvokeAsync(delegate
@@ -657,61 +666,8 @@ namespace PROShine
         {
             Dispatcher.InvokeAsync(delegate
             {
-                MapNameText.Text = map; ;
+                MapNameText.Text = map;
                 PlayerPositionText.Text = "(" + x + "," + y + ")";
-            });
-        }
-
-        private void Client_RefreshSpawnList(List<PokemonSpawn> pkmns)
-        {
-            Dispatcher.InvokeAsync(delegate
-            {
-                SpawnList.Children.Clear();  // Clearing the spawn list before adding new one.
-                
-                pkmns.ForEach(delegate (PokemonSpawn pkmn)
-                {
-                    /* Captured : http://fontawesome.io/icon/check/ | Not : http://fontawesome.io/icon/times/
-                     * MSOnly : http://fontawesome.io/icon/certificate/
-                     * SURF : http://fontawesome.io/icon/ship/ | GROUND : http://fontawesome.io/icon/globe/
-                     * MAY HOLD AN ITEM : http://fontawesome.io/icon/percent/
-                    */
-              
-                    DockPanel d = new DockPanel();
-                    FontAwesome.WPF.FontAwesome c = new FontAwesome.WPF.FontAwesome();
-                    FontAwesome.WPF.FontAwesome m = new FontAwesome.WPF.FontAwesome();
-                    FontAwesome.WPF.FontAwesome s = new FontAwesome.WPF.FontAwesome();
-                    FontAwesome.WPF.FontAwesome i = new FontAwesome.WPF.FontAwesome();
-
-                    if (pkmn.captured)
-                    {
-                        c.Icon = FontAwesomeIcon.Check;
-                        d.Children.Add(c);
-                    }
-                    if (pkmn.msonly)
-                    {
-                        m.Icon = FontAwesomeIcon.Certificate;
-                        d.Children.Add(m);
-                    }
-                    if (pkmn.surf)
-                    {
-                        s.Icon = FontAwesomeIcon.Ship;
-                        d.Children.Add(s);
-                    }
-                    else
-                    {
-                        s.Icon = FontAwesomeIcon.Globe;
-                        d.Children.Add(s);
-                    }
-                    if (pkmn.hitem)
-                    {
-                        i.Icon = FontAwesomeIcon.Percent;
-                        d.Children.Add(i);
-                    }
-                    TextBlock Name = new TextBlock();
-                    Name.Text = pkmn.name;
-                    d.Children.Add(Name);
-                    SpawnList.Children.Add(d);
-                });
             });
         }
 
@@ -726,24 +682,6 @@ namespace PROShine
                 }
                 Team.PokemonsListView.ItemsSource = team;
                 Team.PokemonsListView.Items.Refresh();
-            });
-        }
-
-        private void Trade_PokemonsUpdated()
-        {
-            Dispatcher.InvokeAsync(delegate
-            {
-                IList<TradePokemon> First_items;
-                IList<TradePokemon> Second_items;
-                lock (Bot)
-                {
-                    First_items = Bot.Game.First_Trade.ToArray();
-                    Second_items = Bot.Game.Second_Trade.ToArray();
-                }
-                Trade.First_list.ItemsSource = First_items;
-                Trade.Second_list.ItemsSource = Second_items;
-                Trade.First_list.Items.Refresh();
-                Trade.Second_list.Items.Refresh();
             });
         }
 
@@ -768,8 +706,8 @@ namespace PROShine
         {
             Dispatcher.InvokeAsync(delegate
             {
-            StatusText.Text = "In battle";
-            StatusText.Foreground = Brushes.Blue;
+                StatusText.Text = "In battle";
+                StatusText.Foreground = Brushes.Blue;
             });
         }
 
@@ -778,7 +716,7 @@ namespace PROShine
             Dispatcher.InvokeAsync(delegate
             {
                 message = Regex.Replace(message, @"\[.+?\]", "");
-                LogMessage(message, Brushes.SlateGray);
+                LogMessage(message);
             });
         }
 
@@ -795,7 +733,7 @@ namespace PROShine
         {
             Dispatcher.InvokeAsync(delegate
             {
-                LogMessage(message, Brushes.RoyalBlue);
+                LogMessage(message);
             });
         }
 
@@ -811,7 +749,7 @@ namespace PROShine
         {
             Dispatcher.InvokeAsync(delegate
             {
-                LogMessage("Received Invalid Packet: " + error + ": " + packet, Brushes.OrangeRed);
+                LogMessage("Received Invalid Packet: " + error + ": " + packet);
             });
         }
 
@@ -835,7 +773,7 @@ namespace PROShine
                     content.Append(item.Name);
                     content.Append(" ($" + item.Price + ")");
                 }
-                LogMessage(content.ToString(), Brushes.DeepSkyBlue);
+                LogMessage(content.ToString());
             });
         }
 
@@ -843,27 +781,16 @@ namespace PROShine
         {
             lock (Bot)
             {
-                //BotStartMenuItem.IsEnabled = Bot.Game != null && Bot.Game.IsConnected && Bot.Script != null && Bot.Running == BotClient.State.Stopped;
-                //BotStopMenuItem.IsEnabled = Bot.Game != null && Bot.Game.IsConnected && Bot.Running != BotClient.State.Stopped;
+                BotStartMenuItem.IsEnabled = Bot.Game != null && Bot.Game.IsConnected && Bot.Script != null && Bot.Running == BotClient.State.Stopped;
+                BotStopMenuItem.IsEnabled = Bot.Game != null && Bot.Game.IsConnected && Bot.Running != BotClient.State.Stopped;
             }
         }
-
-
-
-        private void LogMessage(string message, Brush color)
-        {
-            TextRange test = new TextRange(MessageTextBox.Document.ContentEnd, MessageTextBox.Document.ContentEnd);
-            test.Text = "[" + DateTime.Now.ToLongTimeString() + "] " + message + '\r';
-
-            // Coloring there.
-            test.ApplyPropertyValue(TextElement.ForegroundProperty, color);
-            FileLog.Append(test.Text);
-            MessageTextBox.ScrollToEnd();
-        }
-
+        
         private void LogMessage(string message)
         {
-            LogMessage(message, Brushes.Black);
+            message = "[" + DateTime.Now.ToLongTimeString() + "] " + message;
+            AppendLineToTextBox(MessageTextBox, message);
+            FileLog.Append(message);
         }
 
         private void LogMessage(string format, params object[] args)
@@ -873,31 +800,30 @@ namespace PROShine
 
         private void AddSystemMessage(string message)
         {
-            LogMessage("System: " + message, Brushes.Green);
+            LogMessage("System: " + message);
+        }
+
+        public static void AppendLineToTextBox(TextBox textBox, string message)
+        {
+            textBox.AppendText(message + Environment.NewLine);
+            if (textBox.Text.Length > 12000)
+            {
+                string text = textBox.Text;
+                text = text.Substring(text.Length - 10000, 10000);
+                int index = text.IndexOf(Environment.NewLine);
+                if (index != -1)
+                {
+                    text = text.Substring(index + Environment.NewLine.Length);
+                }
+                textBox.Text = text;
+            }
+            textBox.CaretIndex = textBox.Text.Length;
+            textBox.ScrollToEnd();
         }
 
         private void MenuAbout_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(App.Name + " version " + App.Version + ", by " + App.Author + "." + Environment.NewLine + App.Description, App.Name + " - About");
-        }
-
-        private void Collapse_Click(object sender, RoutedEventArgs e)
-        {
-            if (CollapseIcon.Icon.Equals(FontAwesomeIcon.ChevronCircleUp))
-            {
-                MaxHeight = 70;
-                MaxWidth = 700;
-                CollapseIcon.Icon = FontAwesomeIcon.ChevronCircleDown;
-            }
-            else
-            {
-                MaxHeight = 1000;
-                Height = 513;
-                MaxWidth = 1000;
-                Width = 800;
-                CollapseIcon.Icon = FontAwesomeIcon.ChevronCircleUp;
-            }
-            
         }
 
         private void MenuForum_Click(object sender, RoutedEventArgs e)
@@ -935,6 +861,7 @@ namespace PROShine
             lock (Bot)
             {
                 Bot.Stop();
+                Bot.CancelInvokes();
             }
         }
 

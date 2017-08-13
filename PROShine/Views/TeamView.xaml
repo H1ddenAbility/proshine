@@ -13,7 +13,7 @@
                         PreviewMouseMove="List_MouseMove"
                         Drop="List_Drop" 
                         DragEnter="List_DragEnter" 
-                        AllowDrop="True" SelectionChanged="PokemonsListView_SelectionChanged" >
+                        AllowDrop="True" >
                 <ListView.ItemContainerStyle>
                     <Style>
                         <Setter Property="ToolTipService.ShowDuration" Value="60000"/>
@@ -22,12 +22,12 @@
                             <Setter.Value>
                                 <Canvas Height="300" Width="430" Background="#403F45">
                                     <!-- Header -->
-                                    <TextBlock Canvas.Top="5" Canvas.Left="40" Text="{Binding Name}" FontSize="18" FontWeight="ExtraBold" Foreground="Gray"/>
-                                    <TextBlock Canvas.Top="8" Canvas.Left="150" Text="{Binding Gender}" FontSize="15" Foreground="Gray"/>
-                                    <TextBlock Canvas.Top="8" Canvas.Left="170" Text="Lv." FontSize="15" Foreground="Gray"/>
-                                    <TextBlock Canvas.Top="8" Canvas.Left="190" Text="{Binding Experience.CurrentLevel}" FontSize="15" Foreground="Gray"/>
-                                    <TextBlock Canvas.Top="8" Canvas.Left="10" Text="#" FontSize="15" Foreground="Gray"/>
-                                    <TextBlock Canvas.Top="8" Canvas.Left="20" Text="{Binding Id}" FontSize="15" Foreground="Gray"/>
+                                    <TextBlock Canvas.Top="5" Canvas.Left="10" Text="{Binding Name}" FontSize="18" FontWeight="ExtraBold" Foreground="White"/>
+                                    <TextBlock Canvas.Top="8" Canvas.Left="184" Text="{Binding Gender}" FontSize="15" Foreground="White"/>
+                                    <TextBlock Canvas.Top="8" Canvas.Left="237" Text="Level:" FontSize="15" Foreground="White"/>
+                                    <TextBlock Canvas.Top="8" Canvas.Left="279" Text="{Binding Experience.CurrentLevel}" FontSize="15" Foreground="White"/>
+                                    <TextBlock Canvas.Top="8" Canvas.Left="324" Text="Id:" FontSize="15" Foreground="White"/>
+                                    <TextBlock Canvas.Top="8" Canvas.Left="345" Text="{Binding Id}" FontSize="15" Foreground="White"/>
 
                                     <!-- Main -->
                                     <Canvas Canvas.Top="30" Canvas.Left="10" Width="410" Height="260" Background="#232330">
@@ -88,9 +88,9 @@
                                         <TextBlock Canvas.Top="71" Canvas.Left="331" Text="{Binding Region}" FontSize="15" Foreground="White"/>
 
                                         <!-- Stats -->
-                                        <TextBlock Text="Stat" Canvas.Left="322" FontSize="15" Foreground="White" Canvas.Top="108"/>
-                                        <TextBlock Text="IV" Canvas.Left="356" FontSize="15" Foreground="#D48600" Canvas.Top="108"/>
-                                        <TextBlock Text="EV" Canvas.Left="379" FontSize="15" Foreground="#00D4D4" Canvas.Top="108"/>
+                                        <TextBlock Text="Stat:" Canvas.Left="322" FontSize="15" Foreground="White" Canvas.Top="108"/>
+                                        <TextBlock Text="IV:" Canvas.Left="356" FontSize="15" Foreground="#D48600" Canvas.Top="108"/>
+                                        <TextBlock Text="EV:" Canvas.Left="379" FontSize="15" Foreground="#00D4D4" Canvas.Top="108"/>
 
                                         <Canvas Canvas.Top="128" Canvas.Left="269" Width="135" Height="126" Background="#171717">
                                             <TextBlock Text="ATK:" Canvas.Left="3" FontSize="15" Foreground="White"/>
@@ -129,13 +129,13 @@
                 </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" FrameworkElement.FlowDirection="RightToLeft" Width="30"/>
-                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="110"/>
-                        <GridViewColumn Header="Level" DisplayMemberBinding="{Binding Experience.CurrentLevel}" Width="40"/>
-                        <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="60"/>
-                        <GridViewColumn Header="HP" DisplayMemberBinding="{Binding Health}" Width="70"/>
-                        <GridViewColumn Header="Remaining Exp" DisplayMemberBinding="{Binding Experience.RemainingExperience}" Width="100"/>
-                        <GridViewColumn Header="Item" DisplayMemberBinding="{Binding ItemHeld}" Width="120"/>
+                        <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}"/>
+                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
+                        <GridViewColumn Header="Level" DisplayMemberBinding="{Binding Experience.CurrentLevel}"/>
+                        <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}"/>
+                        <GridViewColumn Header="HP" DisplayMemberBinding="{Binding Health}"/>
+                        <GridViewColumn Header="Remaining Exp" DisplayMemberBinding="{Binding Experience.RemainingExperience}"/>
+                        <GridViewColumn Header="Item" DisplayMemberBinding="{Binding ItemHeld}"/>
                     </GridView>
                 </ListView.View>
             </ListView>
